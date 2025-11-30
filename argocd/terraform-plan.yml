@@ -1,0 +1,52 @@
+# (using OIDC)
+
+name: Terraform Plan (infra)
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    environment: testing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.INFRA_OIDC_ROLE_ARN }} # recommended: populate via repo secret OR prefer dynamic lookup
+          aws-region: ap-south-1
+          role-session-name: gh-actions-terraform
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init -input=false
+
+      - name: Terraform Validate & Fmt
+        working-directory: infra
+        run: |
+          terraform fmt -check
+          terraform validate
+
+      - name: Terraform Plan
+        working-directory: infra
+        run: terraform plan -out=plan.tfplan -input=false
+      - name: Upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-plan
+          path: infra/plan.tfplan

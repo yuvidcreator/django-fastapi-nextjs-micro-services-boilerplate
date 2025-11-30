@@ -1,0 +1,33 @@
+# (example)
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services-applicationset
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      repoURL: 'git@github.com:your-org/infra.git'
+      revision: HEAD
+      directories:
+      - path: 'charts/*'  # deploy every chart folder as an ArgoCD Application
+  template:
+    metadata:
+      name: '{{path.basename}}-app'
+    spec:
+      project: default
+      source:
+        repoURL: 'git@github.com:your-org/infra.git'
+        targetRevision: HEAD
+        path: '{{path}}'
+        helm:
+          valueFiles:
+            - values-{{env}}.yaml
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{path.basename}}-ns'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

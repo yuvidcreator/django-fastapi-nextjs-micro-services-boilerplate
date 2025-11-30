@@ -1,0 +1,161 @@
+###############################################
+# GLOBAL APPLICATION CONFIGURATIONS
+# ------------------------------------------------
+# This file controls BOTH VPS deployment and
+# AWS Cloud deployment. Duplicate into:
+#   env/vps.env
+#   env/aws.env
+# and override values as needed.
+###############################################
+
+# Name of your platform / ecosystem
+APP_NAME=socialx
+
+# deployment target: vps | aws
+DEPLOY_TARGET=vps
+
+# environment: development | staging | production
+ENVIRONMENT=staging
+
+###############################################
+# DOCKER IMAGES & REGISTRY
+###############################################
+
+# Default Docker image tag for all services
+DEFAULT_IMAGE_TAG=latest
+
+# Local registry (VPS Mode)
+# registry.local:5000 or IP:5000
+DOCKER_REGISTRY_HOST=registry.local:5000
+
+# AWS ECR (Cloud Mode)
+AWS_ECR_ACCOUNT_ID=111111111111
+AWS_ECR_REGION=ap-south-1
+ECR_REPOSITORY_PREFIX=${APP_NAME}
+
+###############################################
+# AWS INFRA (Cloud Mode)
+###############################################
+
+# AWS region for Terraform, ECR, RDS, S3, EKS
+AWS_REGION=ap-south-1
+
+# Terraform remote state S3 bucket
+# Only used when DEPLOY_TARGET=aws
+TFSTATE_BUCKET=socialx-terraform-state
+GITHUB_REPO=your-org/socialx-monorepo
+
+###############################################
+# VPS SERVER (Ubuntu / Single VM Staging Mode)
+###############################################
+
+# VPS Public IP or DNS
+VPS_HOST=0.0.0.0
+
+# SSH user for VPS deployments
+VPS_SSH_USER=ubuntu
+
+# Path to SSH key used by CI/CD (GitHub secret maps here)
+VPS_SSH_KEY_PATH=~/.ssh/id_rsa
+
+###############################################
+# DATABASE CONFIGURATION
+# (Common API; values differ by mode)
+###############################################
+
+POSTGRES_DB=${APP_NAME}_db
+POSTGRES_USER=socialx
+POSTGRES_PASSWORD=CHANGE_ME_STRONG_PASSWORD
+
+# VPS Mode → connect to docker-compose postgres
+# AWS Mode → connect to AWS RDS endpoint
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+
+###############################################
+# CACHE, BROKER & PUBSUB
+###############################################
+
+# Redis cache + Celery broker (VPS mode)
+# AWS Mode → use ElastiCache hostname
+REDIS_URL=redis://redis:6379/0
+
+# Kafka broker for events & feed fanout
+# VPS: use kafka container
+# AWS: use MSK endpoint
+KAFKA_BROKER=kafka:9092
+
+###############################################
+# OBJECT STORAGE (S3 / MINIO)
+###############################################
+
+# VPS mode (MinIO)
+MINIO_ROOT_USER=minio
+MINIO_ROOT_PASSWORD=minio123
+MINIO_URL=http://minio:9000
+
+# AWS mode (S3)
+S3_BUCKET=${APP_NAME}-assets
+
+###############################################
+# AUTHENTICATION CONFIG
+###############################################
+
+# Cookies for session/JWT storage
+COOKIE_SECURE=false               # true when https enabled
+COOKIE_HTTPONLY=true
+COOKIE_SAMESITE=lax               # strict|lax|none
+COOKIE_DOMAIN=localhost           # set public domain in cloud
+
+# JWT or My custom Auth-service secrets (do NOT commit real keys)
+JWT_SECRET=CHANGE_ME_JWT_SECRET
+
+###############################################
+# FRONTEND (NextJS)
+###############################################
+
+NEXT_PUBLIC_APP_NAME=${APP_NAME}
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NODE_ENV=production
+
+###############################################
+# SERVICE DISCOVERY (VPS MODE)
+###############################################
+# In cloud mode, Kubernetes service names replace these
+###############################################
+
+USER_SERVICE_URL=http://user-service:8001
+FEED_SERVICE_URL=http://feed-service:8002
+AUTH_SERVICE_URL=http://auth-service:8003
+MEDIA_SERVICE_URL=http://media-service:8004
+
+###############################################
+# LOGGING & MONITORING
+###############################################
+
+# VPS Mode → local elastic/kibana
+ELASTICSEARCH_URL=http://elasticsearch:9200
+
+# AWS Mode → CloudWatch logs, but apps still need level
+LOG_LEVEL=INFO
+
+###############################################
+# EMAIL / NOTIFICATIONS
+###############################################
+
+MAIL_HOST=mailhog
+MAIL_PORT=1025
+MAIL_FROM=noreply@${APP_NAME}.com
+
+###############################################
+# FALLBACKS & EXTRA CONFIG
+###############################################
+
+ENABLE_CELERY=true
+ENABLE_KAFKA=true
+ENABLE_METRICS=true
+ENABLE_TRACING=false
+
+###############################################
+# END OF FILE
+###############################################

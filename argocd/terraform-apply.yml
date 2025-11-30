@@ -1,0 +1,30 @@
+# (condensed)
+
+name: Terraform Apply (infra)
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://console.aws.amazon.com/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.INFRA_OIDC_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: infra-plan
+          path: infra
+      - name: Terraform Apply
+        working-directory: infra
+        run: terraform apply -input=false infra/plan.tfplan
