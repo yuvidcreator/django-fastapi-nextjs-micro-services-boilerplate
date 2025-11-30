@@ -1,0 +1,97 @@
+
+
+cd <project>
+uv init .
+
+uv add Django djangorestframework djangorestframework-simplejwt django-environ psycopg2-binary celery redis gunicorn
+
+uv add --dev pytest pytest-django
+
+# makesure at last ". (dot)" must be used 
+uv run django-admin startproject coreAPI .
+
+# Test django app
+uv run manage.py runserver
+
+# Add Django-APPs
+uv run python manage.py startapp <APP_NAME>
+
+
+
+# =================================
+# Installing dependencies in production
+# uv sync installs development dependencies by default. 
+# Because of this, it’s good practice to instruct 
+# uv not to install dev dependencies in production using the --no-dev flag:
+uv sync --no-dev --locked
+
+# The --locked flag is recommended because it makes sure 
+# your lock file is in sync with your dependency definitions. 
+# If it is not uv sync will fail:
+uv run --locked python manage.py check
+
+# This way, only the package in the versions specified 
+in your lock file will get installed, making your builds properly reproducible!
+# =================================
+
+
+# =================================
+# If you use uv run without uv sync to run your program in production, 
+# include the --no-dev and --locked flags the same way as you would with uv sync:
+uv run --no-dev --locked gunicorn coreAPI.wsgi
+
+# Hint: If you don’t mind installing dependencies and running your app in a single step, 
+# you can omit the uv sync command. uv run --no-dev --locked will ensure that 
+# all packages are installed before running.
+# =================================
+
+# =================================
+## Installing dependencies in CI
+# Like in production, you also want to make sure your tests are as reproducible as possible 
+# so the --locked flag is good practice, but since your dev dependencies likely include 
+# tools for testing you usually don’t add --no-dev like you do in production:
+uv sync --locked
+
+# GitHub Actions
+# If you are running your tests on GitHub actions 
+# then using Astral’s official setup-uv action is the easiest way:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+        version: "latest"
+    - name: Install dependencies
+      run: uv sync --locked
+    - name: Collect static files
+      run: uv run python manage.py collectstatic
+    - name: Run Tests
+      run: uv run pytest
+
+# I like to have a separate uv sync step in tests so that 
+# it’s clearer how long it took to install dependencies and how long to run any of the commands.
+
+# If you don’t want uv to also manage the Python version, you can use the setup-python aciton:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+        version: "latest"
+
+## Upgrading dependencies
+# To upgrade your dependencies, run uv lock --upgrade, and 
+# it will update your uv.lock file based on the constraints in your dependencies definition:
+uv lock --upgrade
